@@ -1,11 +1,11 @@
 # smart contract
-InifiBlock smart contract collection
+InfiniBlockToken smart contract collection
 
 ## token contract
 InfiniBlock token comply with ERC20, and can be locked some days.
 ### Initial Property
 - token name: InfiniBlock
-- token symbol: IFC
+- token symbol: IBT
 - Initial supply: **10** billions
 
 ### Additional Interface
