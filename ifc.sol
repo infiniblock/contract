@@ -21,11 +21,11 @@ contract ERC20 {
     event Transfer(address indexed src, address indexed dst, uint wad);
 }
 
-contract IfcToken is ERC20, DSMath {
+contract InfiniBlockToken is ERC20, DSMath {
     string public constant name = "InfiniBlock"; //  token name
-    string public constant symbol = "IFC";       //  token symbol
+    string public constant symbol = "IBT";       //  token symbol
     uint   public constant decimals = 18;        //  token digit
-    uint   public constant totalSupply = 10 * (10 ** 9) * (10 ** uint(decimals)); // 10 billions
+    uint   public constant totalSupply = 10 * (10 ** 9) * (10 ** uint(decimals)); // 10 billions IBT
 
     bool stopped = false;
     address mint = 0;
@@ -41,13 +41,13 @@ contract IfcToken is ERC20, DSMath {
         _;
     }
 
-    modifier stoppable {
+    modifier running {
         require (!stopped);
         _;
     }
 
     modifier unlocked {
-        require (0 == lockTimestamp[msg.sender] || block.timestamp > lockTimestamp[msg.sender]);
+        require (block.timestamp > lockTimestamp[msg.sender]);
         _;
     }
 
@@ -66,7 +66,7 @@ contract IfcToken is ERC20, DSMath {
         return approvals[src][guy];
     }
 
-    function transfer(address dst, uint wad) public stoppable unlocked returns (bool success) {
+    function transfer(address dst, uint wad) public running unlocked returns (bool success) {
         balances[msg.sender] = sub(balances[msg.sender], wad);
         balances[dst] = add(balances[dst], wad);
 
@@ -75,17 +75,17 @@ contract IfcToken is ERC20, DSMath {
         return true;
     }
 
-    function transferFrom(address src, address dst, uint wad) public stoppable unlocked returns (bool success) {
+    function transferFrom(address src, address dst, uint wad) public running returns (bool success) {
         approvals[src][msg.sender] = sub(approvals[src][msg.sender], wad);
-        balances[dst] = add(balances[dst], wad);
         balances[src] = sub(balances[src], wad);
+        balances[dst] = add(balances[dst], wad);
 
         emit Transfer(src, dst, wad);
 
         return true;
     }
 
-    function approve(address guy, uint wad) public stoppable unlocked returns (bool success) {
+    function approve(address guy, uint wad) public running unlocked returns (bool success) {
         require(wad == 0 || approvals[msg.sender][guy] == 0);
         approvals[msg.sender][guy] = wad;
 
@@ -94,17 +94,19 @@ contract IfcToken is ERC20, DSMath {
         return true;
     }
 
-    function transferWithLock(address dst, uint wad, uint lockDays) public owner stoppable returns (bool success) {
+    function saleAndLock(address dst, uint wad, uint lockDays) public owner running returns (bool success) {
+        require (0 == balances[dst] && wad > 0);
+
         balances[mint] = sub(balances[mint], wad);
         balances[dst] = add(balances[dst], wad);
-        lockTimestamp[dst] = block.timestamp + lockDays * 1 days;
+        lockTimestamp[dst] = add(block.timestamp, lockDays * 1 days);
 
         emit Sale(dst, wad, lockDays);
 
         return true;
     }
 
-    function stop() public owner stoppable {
+    function stop() public owner running {
         stopped = true;
     }
 
